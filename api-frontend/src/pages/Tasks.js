@@ -1,5 +1,4 @@
-// src/pages/Tasks.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import taskService from '../services/taskService';
 import TaskCard from '../components/TaskCard';
 import TaskModal from '../components/TaskModal';
@@ -13,14 +12,6 @@ const Tasks = () => {
   const [filter, setFilter] = useState('all'); // all, completed, pending
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  useEffect(() => {
-    filterTasks();
-  }, [tasks, filter, searchTerm]);
-
   const fetchTasks = async () => {
     try {
       const response = await taskService.getTasks();
@@ -32,17 +23,16 @@ const Tasks = () => {
     }
   };
 
-  const filterTasks = () => {
+  // Wrap filterTasks in useCallback to make it stable
+  const filterTasks = useCallback(() => {
     let filtered = [...tasks];
 
-    // Filter by status
     if (filter === 'completed') {
       filtered = filtered.filter(task => task.completed);
     } else if (filter === 'pending') {
       filtered = filtered.filter(task => !task.completed);
     }
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(task =>
         task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -51,10 +41,17 @@ const Tasks = () => {
     }
 
     setFilteredTasks(filtered);
-  };
+  }, [tasks, filter, searchTerm]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    filterTasks();
+  }, [filterTasks]);
 
   const handleCreateTask = async (taskData) => {
-    console.log('RAW taskData from UI:', taskData);
     try {
       const formattedData = {
         title: taskData.title,
@@ -62,7 +59,6 @@ const Tasks = () => {
         priority: taskData.priority,
         due_date: taskData.due_date ? new Date(taskData.due_date).toISOString() : null
       };
-      console.log('Date: ', formattedData);
       await taskService.createTask(formattedData);      
       await fetchTasks();
       setIsModalOpen(false);
@@ -73,7 +69,6 @@ const Tasks = () => {
   };
 
   const handleUpdateTask = async (taskData) => {
-    
     try {
       const formattedData = {
         title: taskData.title,
@@ -81,7 +76,6 @@ const Tasks = () => {
         priority: taskData.priority,
         due_date: taskData.due_date ? new Date(taskData.due_date).toISOString() : null
       };
-
       await taskService.updateTask(editingTask.id, formattedData);
       await fetchTasks();
       setIsModalOpen(false);
@@ -244,7 +238,7 @@ const Tasks = () => {
         />
       </div>
     </div>
-  );
+  ); 
 };
 
 export default Tasks;
