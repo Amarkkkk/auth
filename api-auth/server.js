@@ -5,7 +5,7 @@ const { connectDB, sequelize } = require('./src/config/database');
 // start the server
 // initialize the database connection and start express server
 
-const PORT = process.env.port || 5000;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
     try {

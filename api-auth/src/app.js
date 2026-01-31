@@ -9,7 +9,13 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: [
+        'https://api-frontend-five-fawn.vercel.app/', // your Vercel frontend URL
+        'http://localhost:3000' // optional: for local development
+    ],
+    credentials: true // if you send cookies or auth headers
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
