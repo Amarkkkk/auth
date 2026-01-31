@@ -7,16 +7,19 @@ require('dotenv').config();
 
 const app = express();
 const allowedOrigins = [
-  'https://api-frontend-five-fawn.vercel.app', // your deployed frontend
+  'https://auth-drhegkflr-marks-projects-e20d608b.vercel.app', // your deployed frontend
   'http://localhost:3000'
 ];
 
+// CORS middleware
 app.use(cors({
-  origin: function(origin, callback){
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+  origin: function(origin, callback) {
+    // allow requests with no origin like Postman or server-to-server
+    if (!origin) return callback(null, true);
+
+    if (!allowedOrigins.includes(origin)) {
+      console.log('Blocked by CORS:', origin);
+      return callback(new Error('CORS not allowed for this origin'), false);
     }
     return callback(null, true);
   },
