@@ -18,10 +18,8 @@ const startServer = async () => {
         // warning: {force: true } will drop all tables and recreate them
         // use { alter: tru } in development to update tables
         // use migrations in production
-        if (process.env.NODE_ENV === 'development'){
-            await sequelize.sync({ alter: true });
-            console.log('Database tables synchronize');
-        }
+        await sequelize.sync({ alter: true });
+console.log('Database tables synchronized in production');
 
         // start express server
         app.listen(PORT, () => {
