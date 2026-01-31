@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const allowedOrigins = [
-  'https://auth-drhegkflr-marks-projects-e20d608b.vercel.app', // your deployed frontend
+  'https://auth-nm4icj0hv-marks-projects-e20d608b.vercel.app', // your deployed frontend
   'http://localhost:3000'
 ];
 
