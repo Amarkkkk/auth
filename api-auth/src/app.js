@@ -6,20 +6,28 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
+const allowedOrigins = [
+  'https://your-frontend-url.vercel.app',
+  'http://localhost:3000' // for local dev
+];
 
+app.use(cors({
+  origin: function(origin, callback){
+    if(!origin) return callback(null, true);
+    if(allowedOrigins.indexOf(origin) === -1){
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
 // Middleware
 app.use(helmet());
-app.use(cors({
-    origin: [
-        'https://api-frontend-five-fawn.vercel.app/', // your Vercel frontend URL
-        'http://localhost:3000' // optional: for local development
-    ],
-    credentials: true // if you send cookies or auth headers
-}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'production') {
   app.use(morgan('dev'));
 }
 
