@@ -1,5 +1,5 @@
 import axios from 'axios';
-const API_URL = "https://auth-xhde.onrender.com";
+const API_URL = "https://auth-xhde.onrender.com/api";
 
 //create axios instance
 const api = axios.create({
