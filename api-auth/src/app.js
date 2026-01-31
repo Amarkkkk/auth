@@ -7,8 +7,8 @@ require('dotenv').config();
 
 const app = express();
 const allowedOrigins = [
-  'https://your-frontend-url.vercel.app',
-  'http://localhost:3000' // for local dev
+  'https://api-frontend-five-fawn.vercel.app', // your deployed frontend
+  'http://localhost:3000'
 ];
 
 app.use(cors({

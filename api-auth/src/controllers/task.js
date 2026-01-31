@@ -46,7 +46,7 @@ const getTasks = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving tasks',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };
@@ -83,7 +83,7 @@ const getTask = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error retrieving task',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };
@@ -133,7 +133,7 @@ const createTask = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error creating task',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };
@@ -196,7 +196,7 @@ const updateTask = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error updating task',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };
@@ -231,7 +231,7 @@ const deleteTask = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error deleting task',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };
@@ -282,7 +282,7 @@ const getTaskStats = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching statistics',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
 };

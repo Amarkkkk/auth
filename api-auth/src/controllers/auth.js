@@ -85,7 +85,7 @@ const register = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error registering user',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined  // ✅ Fixed: was node_env
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined  // ✅ Fixed: was node_env
         });
     }
 };
@@ -143,7 +143,7 @@ const login = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error logging in',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined  // ✅ Fixed
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined  // ✅ Fixed
         });
     }
 };
@@ -185,7 +185,7 @@ const getMe = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching user data',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined  // ✅ Fixed
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined  // ✅ Fixed
         });
     }
 };
@@ -240,7 +240,7 @@ const updateProfile = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error updating profile',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined  // ✅ Fixed
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined  // ✅ Fixed
         });
     }
 };
@@ -289,7 +289,7 @@ const changePassword = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error changing password',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined  // ✅ Fixed
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined  // ✅ Fixed
         });
     }
 };
