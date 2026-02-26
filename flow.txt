@@ -1,0 +1,116 @@
+uptime robot - continues backend deployment
+render - backend deploy
+vercel - front end
+
+db 
+
+user
+- user_id
+- name
+- email
+- password
+- created_at
+- updated_at
+
+task 
+- task_id - string
+- user_id - string
+- title - string (100)
+- description - text
+- priority - Enum
+- status - Enum: Pending, Ongoing, In Progress, Completed
+- progress_percentage - for the progress
+- task_start - assign by the user when the task start
+- task_due - assugn by the user for 100% progress percentage calculation
+- last_estimated_progress - this is for confirmation of the user but this will automatically start base on the time task_start or user clicks the start
+- created_at - timestamp
+- updated_at - timestamp
+
+subtask - optional
+- subtask_id
+- task_id
+- subtask_title
+- subtask_description
+- subtask_status 
+- subask_progress_percentage
+- subtask_start - nullable cause user doesn't want to start it immedietly
+- subtask_due
+- subtask_last_estimated_progress
+
+progress confirmation - for comparing if the automatically progress is accurate in user progress set
+- progress_confirmation_id
+- task_id - nullable because this progress confirmation can be in subtask_id
+- subtask_id - nullable because this progress confirmation can be in task_id
+- user_id
+- confirmed_progress - set by the user
+- confirmed_at
+
+visual flow
+[Dashboard / Home Page]
+------------------------------------------------
+| - Quick Stats: Total / Completed / Pending / In Progress / Canceled
+| - Task Cards/List: Title, Priority, Status Badge, Progress Bar
+| - Filters: Status, Priority, Tags
+| - Quick Actions: Start / Complete / Cancel
+| - Notifications Panel
+| - Optional Calendar View / Timeline
+|
+|-- Click Task Card → [Task Detail Page]
+|-- Click “Add Task” → [Add / Edit Task Page]
+
+[Task Detail Page]
+------------------------------------------------
+| - Task Info: Title, Description, Priority, Status, Due Date
+| - Progress Bars: progress_percentage (confirmed) + last_estimated_progress (light overlay)
+| - Subtasks Section:
+|     - List of subtasks with status badges, progress bars
+|     - Add / Edit / Delete subtask
+|     - Start / Cancel / Confirm subtask
+| - Automatic Progress Updates
+| - User Confirmation:
+|     - Show last_estimated_progress
+|     - Input slider / numeric field for confirmed_progress
+| - Buttons: Start Task / Cancel Task / Mark Complete
+| - Optional: Activity Log, Notes, Attachments
+
+[Subtask Detail (Optional Modal/Page)]
+------------------------------------------------
+| - Title, Description
+| - Start / Due Timestamps
+| - Status Dropdown: Pending / Ongoing / In Progress / Completed / Canceled
+| - Progress Bar: progress_percentage + last_estimated_progress
+| - Confirm / Adjust Progress Button
+| - Optional Notes / Attachments
+
+[Add / Edit Task Page]
+------------------------------------------------
+| - Form: Title, Description, Priority, Due Date
+| - Optional: Subtasks Section
+| - Save / Cancel Buttons
+
+[Progress Confirmation Page / Modal]
+------------------------------------------------
+| - List of Tasks / Subtasks needing confirmation
+| - Show last_estimated_progress vs confirmed progress_percentage
+| - Input: Slider / Numeric field
+| - Confirm Button → updates Task/Subtask progress_percentage
+| - Optional: Comment / Note
+
+[Reports / Analytics Page]
+------------------------------------------------
+| - Graphs / Charts:
+|     - Task Completion Rate
+|     - Status Distribution (Pending, Ongoing, In Progress, Completed, Canceled)
+|     - Average Completion Time
+| - Filters: Priority, Tags, Date Range
+| - Export / Share (CSV / PDF)
+
+[Settings / Profile Page]
+------------------------------------------------
+| - Edit User Info: Name, Email, Password
+| - Notifications Settings (reminders for due dates, confirmations)
+| - Theme: Dark / Light Mode
+| - Optional: Default Priority, Default Task Duration
+
+
+

@@ -19,7 +19,7 @@ const startServer = async () => {
         // use { alter: tru } in development to update tables
         // use migrations in production
         await sequelize.sync({ alter: true });
-console.log('Database tables synchronized in production');
+console.log('Database tables synchronized in production or development');
 
         // start express server
         app.listen(PORT, () => {
@@ -31,6 +31,8 @@ console.log('Database tables synchronized in production');
             console.log(`   - Health: http://localhost:${PORT}/api/health`);
             console.log(`   - Auth: http://localhost:${PORT}/api/auth`);
             console.log(`   - Tasks: http://localhost:${PORT}/api/tasks`);
+            console.log(`   - SUbasks: http://localhost:${PORT}/api/subtasks`);
+            console.log(`   - Progress_Confirmation: http://localhost:${PORT}/api/progressConfirmation`);
             console.log('=====================================');
         });
     } catch (error) {
