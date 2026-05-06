@@ -48,14 +48,42 @@ const validateCreateTask = [
     .optional()
     .trim()
     .isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
-  
+  body('category')
+    .optional()
+    .isIn(['NoCategory','Work', 'Personal', 'Health', 'Finance', 'Education', 'Other']).withMessage('Category must be one of: Work, Personal, Health, Finance, Education, Other'),
+    
+  body('customCategory')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 }).withMessage('Custom Category must be between 1 and 50 characters'),
   body('priority')
     .optional()
     .isIn(['low', 'medium', 'high']).withMessage('Priority must be low, medium, or high'),
-  
-  body('dueDate')
+
+  body('task_start')
     .optional()
-    .isISO8601().withMessage('Please provide a valid date in ISO 8601 format')
+    .custom((value) => {
+      if (isNaN(Date.parse(value))){
+        throw new Error('Please provide a valid format');
+      }
+      return true;
+    })
+    .toDate(),
+
+  body('task_due')
+    .optional()
+    .custom((value) => {
+      if (isNaN(Date.parse(value))){
+        throw new Error('Please provid a valid format');
+      }
+      return true;
+    })
+    .custom((value, { req }) => {
+      if (req.body.task_start && new Date(value) <= new Date(req.body.task_start)) {
+        throw new Error('Task due must be after task start');
+      }
+      return true;
+    })
     .toDate()
 ];
 
@@ -74,18 +102,159 @@ const validateUpdateTask = [
     .trim()
     .isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
   
-  body('completed')
+  body('category')
     .optional()
-    .isBoolean().withMessage('Completed must be true or false'),
+    .isIn(['NoCategory','Work', 'Personal', 'Health', 'Finance', 'Education', 'Other']).withMessage('Category must be one of: Work, Personal, Health, Finance, Education, Other'),
+    
+  body('customCategory')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 }).withMessage('Custom Category must be between 1 and 50 characters'),
+
+  body('status')
+    .optional()
+    .isIn(['Pending', 'Ongoing', 'In_progress', 'Completed', 'Canceled']).withMessage('Status will be Pending, Ongoing, In progress, Completed, or Canceled'),
   
   body('priority')
     .optional()
     .isIn(['low', 'medium', 'high']).withMessage('Priority must be low, medium, or high'),
   
-  body('dueDate')
+  body('task_start')
     .optional()
-    .isISO8601().withMessage('Please provide a valid date in ISO 8601 format')
-    .toDate()
+    .custom((value) => {
+      if (isNaN(Date.parse(value))){
+        throw new Error('Please provid a valid format');
+      }
+      return true;
+    })
+    .toDate(),
+  
+  body('task_due')
+    .optional()
+    .custom((value) => {
+      if (isNaN(Date.parse(value))){
+        throw new Error('Please provid a valid format');
+      }
+      return true;
+    })
+    .custom((value, { req }) => {
+      if (req.body.task_start && new Date(value) <= new Date(req.body.task_start)) {
+        throw new Error('Task due must be after task start');
+      }
+      return true;
+    })
+    .toDate(),
+
+  body('progress_percentage')
+    .optional()
+    .isInt({min: 0, max: 100}).withMessage('Progress percetage must be between 0 and 100')
+];
+
+// validate subtask creation - subtasks can be null/optional
+const validateCreateSubtask = [
+  body('task_id')
+    .notEmpty().withMessage('Task ID is required')
+    .isInt().withMessage('Task ID must be a valid integer'),
+  
+  // Normalize subtasks to always be an array
+  body('subtasks')
+    .optional({ nullable: true })
+    .customSanitizer((value) => {
+      if (!value) return value;
+      // Convert single object to array
+      return Array.isArray(value) ? value : [value];
+    })
+    .custom((value) => {
+      if (value && value.length === 0) {
+        throw new Error('At least one subtask is required when subtasks array is provided');
+      }
+      return true;
+    }),
+
+  body('subtasks.*.subtask_title')
+    .if(body('subtasks').exists())
+    .trim()
+    .notEmpty().withMessage('Subtask title is required')
+    .isLength({ min: 3, max: 100 }).withMessage('Title must be between 3 and 100 characters'),
+  
+  body('subtasks.*.subtask_description')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
+  
+  body('subtasks.*.subtask_priority')
+    .optional()
+    .isIn(['low', 'medium', 'high']).withMessage('Priority must be low, medium, or high'),
+
+  body('subtasks.*.subtask_start')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value && isNaN(Date.parse(value))){
+        throw new Error('Please provide a valid format');
+      }
+      return true;
+    }),
+
+  body('subtasks.*.subtask_due')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value && isNaN(Date.parse(value))){
+        throw new Error('Please provide a valid format');
+      }
+      return true;
+    })
+];
+
+// validate update subtask
+const validateUpdateSubtask = [
+  body('subtask_title')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('Title cannot be empty')
+    .isLength({ min: 3, max: 100 }).withMessage('Title must be between 3 and 100 characters'),
+  
+  body('subtask_description')
+    .optional()
+    .trim()
+    .isLength({ max: 500 }).withMessage('Description cannot exceed 500 characters'),
+  
+  body('subtask_status')
+    .optional()
+    .isIn(['Pending', 'Ongoing', 'In_progress', 'Completed', 'Canceled']).withMessage('Status will be Pending, Ongoing, In progress, Completed, or Canceled'),
+  
+  body('subtask_priority')
+    .optional()
+    .isIn(['low', 'medium', 'high']).withMessage('Priority must be low, medium, or high'),
+  
+  body('subtask_start')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value && isNaN(Date.parse(value))){
+        throw new Error('Please provid a valid format');
+      }
+      return true;
+    })
+    .toDate(),
+  
+  body('subtask_due')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (value && isNaN(Date.parse(value))){
+        throw new Error('Please provid a valid format');
+      }
+      return true;
+    })
+    .custom((value, { req }) => {
+      if (value && req.body.subtask_start && new Date(value) <= new Date(req.body.subtask_start)) {
+        throw new Error('Subtask due must be after subtask start');
+      }
+      return true;
+    })
+    .toDate(),
+
+  body('subtask_progress_percentage')
+    .optional()
+    .isInt({min: 0, max: 100}).withMessage('Subtask progress percetage must be between 0 and 100')
 ];
 
 /**
@@ -99,7 +268,7 @@ const handleValidationErrors = (req, res, next) => {
       success: false,
       message: 'Validation failed',
       errors: errors.array().map(err => ({
-        field: err.path,
+        field: err.path || err.param,
         message: err.msg
       }))
     });
@@ -113,5 +282,7 @@ module.exports = {
   validateLogin,
   validateCreateTask,
   validateUpdateTask,
+  validateCreateSubtask,
+  validateUpdateSubtask,
   handleValidationErrors
 };

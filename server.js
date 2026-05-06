@@ -5,7 +5,7 @@ const { connectDB, sequelize } = require('./src/config/database');
 // start the server
 // initialize the database connection and start express server
 
-const PORT = process.env.port || 5000;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
     try {
@@ -18,10 +18,8 @@ const startServer = async () => {
         // warning: {force: true } will drop all tables and recreate them
         // use { alter: tru } in development to update tables
         // use migrations in production
-        if (process.env.NODE_ENV === 'development'){
-            await sequelize.sync({ alter: true });
-            console.log('Database tables synchronize');
-        }
+        await sequelize.sync({ alter: true });
+console.log('Database tables synchronized in production or development');
 
         // start express server
         app.listen(PORT, () => {
@@ -33,6 +31,8 @@ const startServer = async () => {
             console.log(`   - Health: http://localhost:${PORT}/api/health`);
             console.log(`   - Auth: http://localhost:${PORT}/api/auth`);
             console.log(`   - Tasks: http://localhost:${PORT}/api/tasks`);
+            console.log(`   - SUbasks: http://localhost:${PORT}/api/subtasks`);
+            console.log(`   - Progress_Confirmation: http://localhost:${PORT}/api/progressConfirmation`);
             console.log('=====================================');
         });
     } catch (error) {

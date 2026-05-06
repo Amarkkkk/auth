@@ -15,8 +15,8 @@ const errorHandler = (err, req, res, next) => {
     const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
     res.status(statusCode);
 
-    // log error in development
-    if (process.env.NODE_ENV === 'development'){
+    // log error in production or development
+    if (process.env.NODE_ENV === 'development' /*process.env.NODE_ENV === 'production' */){
         console.error('Error: ', {
             message: err.message,
             stack: err.stack,
@@ -28,7 +28,8 @@ const errorHandler = (err, req, res, next) => {
     res.json({
         success: false,
         message: err.message,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, 
+        /*process.env.NODE_ENV === 'production' ? err.stack : undefined,*/
         errors: err.errors || undefined
     });
 };

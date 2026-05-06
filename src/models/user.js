@@ -9,7 +9,7 @@ const User = sequelize.define('User', {
     primaryKey: true,
     autoIncrement: true
   },
-  
+
   name: {
     type: DataTypes.STRING(50),
     allowNull: false,
@@ -51,10 +51,40 @@ const User = sequelize.define('User', {
         msg: 'Password is required'
       },
       len: {
-        args: [6],
-        msg: 'Password must be at least 6 characters'
+        args: [8],
+        msg: 'Password must be at least 8 characters'
       }
     }
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    validate: {
+      len: {
+        args: [0, 500],
+        msg: 'Bio must not exceed 500 characters'
+      }
+    }
+  },
+  phone: {
+    type: DataTypes.STRING(20),    
+    allowNull: true,
+    validate: {
+      is: {
+        args: /^[\d\s\-\+\(\)]+$/,
+        msg: 'Phone number contains invalid containers'
+      }
+    }
+  },
+  profileImage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'profile_image_url'
+  },
+  cloudinaryPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'cloudinary_public_id'
   }
 }, {
   tableName: 'users',
@@ -86,6 +116,19 @@ User.prototype.toJSON = function() {
   const values = { ...this.get() };
   delete values.password;
   return values;
+};
+
+User.prototype.getPublicProfile = function() {
+  return {
+    id: this.id,
+    name: this.name,
+    email: this.email,
+    bio: this.bio,
+    phone: this.phone,
+    profileImageUrl: this.profileImageUrl,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt
+  };
 };
 
 module.exports = User;
