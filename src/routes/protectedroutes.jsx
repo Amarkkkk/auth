@@ -5,9 +5,6 @@
 
 import { Route, Routes } from "react-router-dom";
 import Sidebar from "../components/sidebar/sidebar";
-import Home from "../pages/home";
-import About from "../pages/about";
-import Contact from "../pages/contact";
 
 function ProtectedRoutes({children}) {
     return (

@@ -28,9 +28,9 @@ const Sidebar = () => {
                 </div>
                 {/** nav links **/}
                 <nav className='flex flex-col p-4 space-y-4'>
-                    <SidebarLink to="/home" label="Home" onClick={() => setIsOpen(false)}/>
-                    <SidebarLink to="/about" label="About" onClick={() => setIsOpen(false)}/>
-                    <SidebarLink to="/contact" label="Contact" onClick={() => setIsOpen(false)}/>
+                    <SidebarLink to="/dashboard" label="Dashboard" onClick={() => setIsOpen(false)}/>
+                    <SidebarLink to="/analytics" label="Analytics" onClick={() => setIsOpen(false)}/>
+                    <SidebarLink to="/task" label="Task" onClick={() => setIsOpen(false)}/>
                 </nav>
             </aside>
             {/** background overlay for mobile menu **/}

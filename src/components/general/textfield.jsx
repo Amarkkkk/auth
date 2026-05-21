@@ -1,6 +1,7 @@
 const TextField = ({ 
     label, 
-    type = "text", 
+    type  = "text", 
+    name,
     value, 
     placeholder,
     onChange
@@ -17,6 +18,7 @@ const TextField = ({
             {/** input  */}
             <input
                 type={type}
+                name={name}
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
