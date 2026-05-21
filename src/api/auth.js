@@ -11,3 +11,11 @@ export const signup = async (userData) => {
     return response.data;
 };
 
+export const login = async (credentials) => {
+    const response = await api.post("/auth/login", {
+        email: credentials.email,
+        password: credentials.password,
+    });
+    return response.data;
+};
+

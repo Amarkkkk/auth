@@ -7,7 +7,9 @@ import image from "../../assets/hero.png";
 
 import { signup } from "../../api/auth";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 const Signup = () => {
+    const navigate = useNavigate();
     /// variables and states
     const [form, setForm] = useState({
         name: "",
@@ -33,6 +35,8 @@ const Signup = () => {
             console.log(response);
             /// save token to local storage
             localStorage.setItem("token", response.data.token);
+            // redirect to dashboard
+            navigate("/dashboard");
 
         } 
         catch (err) {
@@ -69,21 +73,21 @@ const Signup = () => {
                             <TextField onChange={handleChange} name="phone" value={form.phone} label="Phone" type="text" placeholder="Enter your phone number" />
                             <TextField onChange={handleChange} name="password" value={form.password} label="Password" type="password" placeholder="Enter your password" />                            
                         
-                        {/** remember me and forgot password */}
-                        <div className="flex flex-row items-center justify-between mt-4">
-                            <div>    
-                                <input type="checkbox" id="remember" className="mr-2" />
-                                <label htmlFor="remember" className="text-sm text-gray-600">Remember me</label>                            
-                            </div>                            
-                            <Button variant="text">Forgot Password</Button>
-                        </div>
+                            {/** remember me and forgot password */}
+                            <div className="flex flex-row items-center justify-between mt-4">
+                                <div>    
+                                    <input type="checkbox" id="remember" className="mr-2" />
+                                    <label htmlFor="remember" className="text-sm text-gray-600">Remember me</label>                            
+                                </div>                            
+                                <Button variant="text">Forgot Password</Button>
+                            </div>
 
-                        {/** login button and sign up link */}
-                        <Button type="submit" to="/dashboard" variant="primary">Sign Up</Button>
-                        <div className="flex items-center justify-center">
-                            <span className="text-sm text-gray-600">Already have an account?</span>
-                            <Button type="submit" variant="text" to="/">Login</Button>
-                        </div>
+                            {/** login button and sign up link */}
+                            <Button type="submit" variant="primary">Sign Up</Button>
+                            <div className="flex items-center justify-center">
+                                <span className="text-sm text-gray-600">Already have an account?</span>
+                                <Button variant="text" to="/">Login</Button>
+                            </div>
                         </form>
                         {/** additional content or social login options can go here */}
                         <div className="relative mt-4">
