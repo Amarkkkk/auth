@@ -8,7 +8,8 @@ require('dotenv').config();
 const app = express();
 const allowedOrigins = [
   'https://auth-nm4icj0hv-marks-projects-e20d608b.vercel.app', // your deployed frontend
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://localhost:5173'
 ];
 
 // CORS middleware

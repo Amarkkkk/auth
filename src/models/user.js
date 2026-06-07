@@ -71,7 +71,7 @@ const User = sequelize.define('User', {
     allowNull: true,
     validate: {
       is: {
-        args: /^[\d\s\-\+\(\)]+$/,
+        args: /^[\d\s\-\+\(\)]*$/,
         msg: 'Phone number contains invalid containers'
       }
     }

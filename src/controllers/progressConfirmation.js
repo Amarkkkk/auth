@@ -4,13 +4,20 @@ const calculateEstimatedProgress = require('../utils/estimatedProgress');
 // Create a new progress confirmation
 const createProgressConfirmation = async (req, res) => {
   try {
-    const { task_id, subtask_id, confirm_progress } = req.body;
+    const { task_id, subtask_id, task_confirm_progress, subtask_confirm_progress } = req.body;
 
-    // Validate confirm_progress
-    if (confirm_progress < 0 || confirm_progress > 100) {
+    // Validate task_confirm_progress
+    if (task_confirm_progress < 0 || task_confirm_progress > 100) {
       return res.status(400).json({
         success: false,
-        message: 'confirm_progress must be between 0 and 100'
+        message: 'Task confirm_progress must be between 0 and 100'
+      });
+    }
+    // validate subtask_confirm_progress if provided
+    if (subtask_confirm_progress !== undefined && (subtask_confirm_progress < 0 || subtask_confirm_progress > 100)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subtask confirm_progress must be between 0 and 100'
       });
     }
 
@@ -32,6 +39,22 @@ const createProgressConfirmation = async (req, res) => {
       }
     }
 
+
+    // ensure the subtask belongs to the task
+    if (subtask && subtask.task_id !== task_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subtask does not belong to the specified task'
+      });
+    }
+
+    // ensure that the subtask_id is required if subtask_confirm_progress is provided
+    if (subtask_confirm_progress !== undefined && !subtask_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'subtask_id is required when subtask_confirm_progress is provided'
+      });
+    }
     // Check if confirmation already exists for this task
     let confirmation = await ProgressConfirmation.findOne({
       where: {
@@ -44,7 +67,8 @@ const createProgressConfirmation = async (req, res) => {
 
     if (confirmation) {
       // Update existing confirmation
-      confirmation.confirm_progress = confirm_progress;
+      confirmation.task_confirm_progress = task_confirm_progress;
+      confirmation.subtask_confirm_progress = subtask_confirm_progress;
       if (subtask_id) {
         confirmation.subtask_id = subtask_id;
       }
@@ -55,24 +79,25 @@ const createProgressConfirmation = async (req, res) => {
         task_id,
         subtask_id,
         user_id: req.user.id,
-        confirm_progress
+        task_confirm_progress,
+        subtask_confirm_progress
       });
       isNewConfirmation = true;
     }
 
-    // Update Task progress based on confirmed progress
-    task.progress_percentage = confirm_progress;
+    // Update Task status based on confirmed progress
+    task.progress_percentage = task_confirm_progress;
 
-    if (confirm_progress === 0) task.status = 'Pending';
-    else if (confirm_progress > 0 && confirm_progress <= 20) task.status = 'In_progress';
-    else if (confirm_progress >= 21 && confirm_progress <= 99) task.status = 'Ongoing';
-    else if (confirm_progress === 100) task.status = 'Completed';
+    if (task_confirm_progress === 0) task.status = 'Pending';
+    else if (task_confirm_progress > 0 && task_confirm_progress <= 20) task.status = 'In_progress';
+    else if (task_confirm_progress >= 21 && task_confirm_progress <= 99) task.status = 'Ongoing';
+    else if (task_confirm_progress === 100) task.status = 'Completed';
 
     await task.save();
 
     // Optionally update subtask progress if needed
     if (subtask) {
-      subtask.progress_percentage = confirm_progress;
+      subtask.subtask_progress_percentage = subtask_confirm_progress;
       await subtask.save();
     }
 
