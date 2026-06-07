@@ -22,7 +22,7 @@ const generateToken = (id) => {
  */
 const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;  // ✅ Changed username to name
+        const { name, email, password, bio, phone } = req.body;  // ✅ Changed username to name
         
         // Check if user exists
         const existingUser = await User.findOne({
@@ -40,8 +40,11 @@ const register = async (req, res) => {
         const user = await User.create({
             name,      // ✅ Changed username to name
             email,
-            password
+            password,
+            bio,
+            phone
         });
+        console.log('Register request body:', req.body);  // ✅ Added for debugging
         // welcome email
         sendWelcomeEmail(email, name).catch(err => 
             console.error('Welcome email error:', err)

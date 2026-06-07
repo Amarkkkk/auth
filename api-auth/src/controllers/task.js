@@ -1,6 +1,6 @@
 const {Task, User, sequelize, ProgressConfirmation, Subtask} = require('../models');
 const { Op, where } = require('sequelize');
-const calculateEstimatedProgress = require('../utils/estimatedProgress');
+const {calculateEstimatedProgress, subtaskcalculateEstimatedProgress} = require('../utils/estimatedProgress');
 const convertPHLocalToUTCISOString = require('../utils/date');
 
 const getStatusFromProgress = (progress)=>  {
@@ -9,7 +9,7 @@ const getStatusFromProgress = (progress)=>  {
     if (progress >= 21 && progress <= 99) return 'Ongoing';
     if (progress === 100) return 'Completed'
 }
-
+// valid time format will be (yyyy-mm-ddThh:mm) or (yyyy-mm-ddThh:mm:ss) or (yyyy-mm-ddThh:mm:ss.sss)
 const isValidPHLocalDateTime = (value) => {
     if (!value) {
         return false;
@@ -84,10 +84,6 @@ const getTasks = async (req, res) => {
             where,
             order: [[sort, order]],
             include: [{
-                model: User,
-                as: 'user',
-                attributes: ['id', 'name', 'email']
-            },{
                 model: Subtask,
                 as: 'subtasks',
                 attributes: ['id', 'task_id', 'subtask_title', 'subtask_description', 'subtask_status',
@@ -96,23 +92,33 @@ const getTasks = async (req, res) => {
             },  {
                 model: ProgressConfirmation,
                 as: 'progressConfirmation',
-                attributes: ['id', 'task_last_estimated_progress', 'confirm_progress', 'createdAt']
+                attributes: ['id', 'task_last_estimated_progress', 'task_confirm_progress', 'createdAt']
             }]
         });
 
         // calculate the estimated progress
         const result = tasks.map(task => {
-            const estimated = calculateEstimatedProgress(task);
+            const taskEstimated = calculateEstimatedProgress(task);
             // update the progressConfirmation model
             const updatedProgressConfirmation = task.progressConfirmation.map(pc => ({
                 ...pc.toJSON(),
-                task_last_estimated_progress: estimated.last_estimated_progress
+                task_last_estimated_progress: taskEstimated.last_estimated_progress
             }));
+            // update subtasks estimated progress
+            const updatedSubtasks = task.subtasks.map(subtask => {
+                const subEstimated = subtaskcalculateEstimatedProgress(subtask);
+                return {
+                    ...subtask.toJSON(),
+                    subtask_last_estimated_progress: subEstimated.last_estimated_progress,
+                    subtask_estimatedStatus: subEstimated.estimatedStatus
+                };
+            });
 
             return {
                 ...task.toJSON(),
-                last_estimated_progress: estimated.last_estimated_progress,
-                estimatedStatus: estimated.estimatedStatus,
+                last_estimated_progress: taskEstimated.last_estimated_progress,
+                estimatedStatus: taskEstimated.estimatedStatus,
+                subtasks: updatedSubtasks,
                 progressConfirmation: updatedProgressConfirmation
             };
         });
@@ -137,30 +143,58 @@ const getTasks = async (req, res) => {
 
 const getTask = async (req, res) => {
     try {
+        
         const task = await Task.findOne({
             where: {
                 id: req.params.id,
                 user_id: req.user.id    // ensure task belongs to authenticated user
             }, 
             include: [{
-                model: User,
-                as: 'user',
-                attributes: ['id', 'name', 'email']
+                model: Subtask,
+                as: 'subtasks',
+                attributes: ['id', 'task_id', 'subtask_title', 'subtask_description', 'subtask_status',
+                    'subtask_start', 'subtask_due', 'subtask_progress_percentage', 'subtask_last_estimated_progress'
+                ]                
             },  {
                 model: ProgressConfirmation,
                 as: 'progressConfirmation',
-                attributes: ['task_last_estimated_progress', 'confirm_progress', 'createdAt']
+                attributes: ['task_last_estimated_progress', 'task_confirm_progress', 'createdAt']
             }]
         });
+        // check if task exists
         if (!task) {
             return res.status(404).json({
                 success: false,
                 message: 'Task not found'
             });
         }
+
+        // calculate the estimated progress
+        const taskEstimated = calculateEstimatedProgress(task);
+        // update subtask
+        const updatedSubtasks = (task.subtasks || []).map(subtask => {
+            const subEstimated = subtaskcalculateEstimatedProgress(subtask);
+            return {
+                ...subtask.toJSON(),
+                subtask_last_estimated_progress: subEstimated.last_estimated_progress,
+                subtask_estimatedStatus: subEstimated.estimatedStatus
+            };
+        });
+        // update the progressConfirmation model
+        const updatedProgressConfirmation = (task.progressConfirmation || []).map(pc => ({
+            ...pc.toJSON(),
+            task_last_estimated_progress: taskEstimated.last_estimated_progress
+        }));
+        const result = {
+            ...task.toJSON(),
+            last_estimated_progress: taskEstimated.last_estimated_progress,
+            estimatedStatus: taskEstimated.estimatedStatus,
+            subtasks: updatedSubtasks,
+            progressConfirmation: updatedProgressConfirmation
+        }
         res.status(200).json({
             success: true,
-            data: { task }
+            data: { result }
         });
     } catch (error) {
         console.error('Get task error:', error);
@@ -276,8 +310,7 @@ const createTask = async (req, res) => {
 
         // Fetch task with user details
         const taskWithUser = await Task.findByPk(task.id, {
-            include: [
-                { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+            include: [                
                 { model: ProgressConfirmation, as: 'progressConfirmation', attributes: ['task_last_estimated_progress', 'confirm_progress', 'createdAt'] }
             ]
         });
@@ -489,16 +522,11 @@ const updateTask = async (req, res) => {
 
         // Fetch updated task with user details
         const updatedTask = await Task.findByPk(task.id, {
-            include: [
-                { 
-                    model: User, 
-                    as: 'user', 
-                    attributes: ['id', 'name', 'email'] 
-                },
+            include: [               
                 { 
                     model: ProgressConfirmation, 
                     as: 'progressConfirmation', 
-                    attributes: ['task_last_estimated_progress', 'confirm_progress', 'createdAt'] 
+                    attributes: ['task_last_estimated_progress', 'task_confirm_progress', 'createdAt'] 
                 }
             ]
         });

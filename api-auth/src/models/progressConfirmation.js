@@ -46,7 +46,7 @@ const Progress_Confirmation = sequelize.define ('Progress_Confirmation', {
         allowNull: true,        
     },
 
-    confirm_progress: {
+    task_confirm_progress: {
         type: DataTypes.FLOAT,
         defaultValue: 0,
         validate: {
@@ -54,6 +54,14 @@ const Progress_Confirmation = sequelize.define ('Progress_Confirmation', {
             max: 100
         }
     },
+    subtask_confirm_progress: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
+        validate: {
+            min: 0,
+            max: 100
+        }
+    }
 }, {
     tableName: 'progressConfirmation',
     timestamps: true,
