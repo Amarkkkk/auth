@@ -45,7 +45,6 @@ const isValidPHLocalDateTime = (value) => {
 //@desc   Get all tasks for the authenticated user
 //@route  GET /api/tasks
 //@access Private
-
 const getTasks = async (req, res) => {
     try{
         // query parameters filtering
@@ -53,7 +52,186 @@ const getTasks = async (req, res) => {
         const allowedStatus = ['Pending', 'Ongoing', 'In_progress', 'Completed', 'Canceled'];
         const allowedCategories = ['NoCategory','Work', 'Personal', 'Health', 'Finance', 'Education', 'Other'];
         // build where clause based on query parameters
-        const where = { user_id: req.user.id };
+        const where = { 
+            user_id: req.user.id,
+            deletedAt: null // only fetch tasks that are not soft-deleted
+        };
+        // filter by completed
+        if (status && allowedStatus.includes(status)) {
+            where.status = status;
+        }
+        // filter by category
+        if( category ) {
+            if (allowedCategories.includes(category)) {
+                where.category = category;
+            } else {
+                where.category = 'Other';
+                where.customCategory = category;
+            }
+        }
+        // filter by priority
+        if( priority ) {
+            where.priority = priority;
+        }
+        // search in title or description
+        if ( search ) {
+            where[Op.or] = [
+                {title: { [Op.iLike]: `%${search}%` } },
+                {description: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+        
+        // get tasks
+        const tasks = await Task.findAll({
+            where,
+            order: [[sort, order]],
+            include: [{
+                model: Subtask,
+                as: 'subtasks',
+                where: {
+                    deletedAt: null // only fetch subtasks that are not soft-deleted
+                },
+                required: false, // include tasks even if they have no subtasks
+                attributes: ['id', 'task_id', 'subtask_title', 'subtask_description', 'subtask_status',
+                    'subtask_start', 'subtask_due', 'subtask_progress_percentage', 'subtask_last_estimated_progress'
+                ]                
+            },  {
+                model: ProgressConfirmation,
+                as: 'progressConfirmation',
+                attributes: ['id', 'task_last_estimated_progress', 'task_confirm_progress', 'createdAt']
+            }]
+        });
+
+        // calculate the estimated progress
+        const result = tasks.map(task => {
+            const taskEstimated = calculateEstimatedProgress(task);
+            // update the progressConfirmation model
+            const updatedProgressConfirmation = task.progressConfirmation.map(pc => ({
+                ...pc.toJSON(),
+                task_last_estimated_progress: taskEstimated.last_estimated_progress
+            }));
+            // update subtasks estimated progress
+            const updatedSubtasks = task.subtasks.map(subtask => {
+                const subEstimated = subtaskcalculateEstimatedProgress(subtask);
+                return {
+                    ...subtask.toJSON(),
+                    subtask_last_estimated_progress: subEstimated.last_estimated_progress,
+                    subtask_estimatedStatus: subEstimated.estimatedStatus
+                };
+            });
+
+            return {
+                ...task.toJSON(),
+                last_estimated_progress: taskEstimated.last_estimated_progress,
+                estimatedStatus: taskEstimated.estimatedStatus,
+                subtasks: updatedSubtasks,
+                progressConfirmation: updatedProgressConfirmation
+            };
+        });
+        res.status(200).json({
+            success: true,
+            count: tasks.length,
+            data: { result }
+        });
+    } catch (error) {
+        console.error('Get tasks error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error retrieving tasks',
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
+        });
+    }
+};
+
+//@desc get single task by id
+//@route GET /api/tasks/:id
+//@access Private
+
+const getTask = async (req, res) => {
+    try {
+        
+        const task = await Task.findOne({
+            where: {
+                id: req.params.id,
+                user_id: req.user.id,    // ensure task belongs to authenticated user
+                deletedAt: null // only fetch tasks that are not soft-deleted
+            }, 
+            include: [{
+                model: Subtask,
+                as: 'subtasks',
+                where: {
+                    deletedAt: null // only fetch subtasks that are not soft-deleted
+                },
+                required: false, // include task even if it has no subtasks
+                attributes: ['id', 'task_id', 'subtask_title', 'subtask_description', 'subtask_status',
+                    'subtask_start', 'subtask_due', 'subtask_progress_percentage', 'subtask_last_estimated_progress'
+                ]                
+            },  {
+                model: ProgressConfirmation,
+                as: 'progressConfirmation',
+                attributes: ['task_last_estimated_progress', 'task_confirm_progress', 'createdAt']
+            }]
+        });
+        // check if task exists
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+
+        // calculate the estimated progress
+        const taskEstimated = calculateEstimatedProgress(task);
+        // update subtask
+        const updatedSubtasks = (task.subtasks || []).map(subtask => {
+            const subEstimated = subtaskcalculateEstimatedProgress(subtask);
+            return {
+                ...subtask.toJSON(),
+                subtask_last_estimated_progress: subEstimated.last_estimated_progress,
+                subtask_estimatedStatus: subEstimated.estimatedStatus
+            };
+        });
+        // update the progressConfirmation model
+        const updatedProgressConfirmation = (task.progressConfirmation || []).map(pc => ({
+            ...pc.toJSON(),
+            task_last_estimated_progress: taskEstimated.last_estimated_progress
+        }));
+        const result = {
+            ...task.toJSON(),
+            last_estimated_progress: taskEstimated.last_estimated_progress,
+            estimatedStatus: taskEstimated.estimatedStatus,
+            subtasks: updatedSubtasks,
+            progressConfirmation: updatedProgressConfirmation
+        }
+        res.status(200).json({
+            success: true,
+            data: { result }
+        });
+    } catch (error) {
+        console.error('Get task error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error retrieving task',
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
+        });
+    }
+};
+
+//@desc get recycled tasks
+//@route Get /api/tasks/recycle-bin
+//@access Private
+
+const getRecycledTasks = async (req, res) => {
+    try{
+        // query parameters filtering
+        const { status, category, priority, search, sort = 'createdAt', order = 'DESC' } = req.query;
+        const allowedStatus = ['Pending', 'Ongoing', 'In_progress', 'Completed', 'Canceled'];
+        const allowedCategories = ['NoCategory','Work', 'Personal', 'Health', 'Finance', 'Education', 'Other'];
+        // build where clause based on query parameters
+        const where = { 
+            user_id: req.user.id,
+            deletedAt: { [Op.not]: null } // only fetch tasks that are soft-deleted
+        };
         // filter by completed
         if (status && allowedStatus.includes(status)) {
             where.status = status;
@@ -135,76 +313,7 @@ const getTasks = async (req, res) => {
             error: process.env.NODE_ENV === 'production' ? error.message : undefined
         });
     }
-};
-
-//@desc get single task by id
-//@route GET /api/tasks/:id
-//@access Private
-
-const getTask = async (req, res) => {
-    try {
-        
-        const task = await Task.findOne({
-            where: {
-                id: req.params.id,
-                user_id: req.user.id    // ensure task belongs to authenticated user
-            }, 
-            include: [{
-                model: Subtask,
-                as: 'subtasks',
-                attributes: ['id', 'task_id', 'subtask_title', 'subtask_description', 'subtask_status',
-                    'subtask_start', 'subtask_due', 'subtask_progress_percentage', 'subtask_last_estimated_progress'
-                ]                
-            },  {
-                model: ProgressConfirmation,
-                as: 'progressConfirmation',
-                attributes: ['task_last_estimated_progress', 'task_confirm_progress', 'createdAt']
-            }]
-        });
-        // check if task exists
-        if (!task) {
-            return res.status(404).json({
-                success: false,
-                message: 'Task not found'
-            });
-        }
-
-        // calculate the estimated progress
-        const taskEstimated = calculateEstimatedProgress(task);
-        // update subtask
-        const updatedSubtasks = (task.subtasks || []).map(subtask => {
-            const subEstimated = subtaskcalculateEstimatedProgress(subtask);
-            return {
-                ...subtask.toJSON(),
-                subtask_last_estimated_progress: subEstimated.last_estimated_progress,
-                subtask_estimatedStatus: subEstimated.estimatedStatus
-            };
-        });
-        // update the progressConfirmation model
-        const updatedProgressConfirmation = (task.progressConfirmation || []).map(pc => ({
-            ...pc.toJSON(),
-            task_last_estimated_progress: taskEstimated.last_estimated_progress
-        }));
-        const result = {
-            ...task.toJSON(),
-            last_estimated_progress: taskEstimated.last_estimated_progress,
-            estimatedStatus: taskEstimated.estimatedStatus,
-            subtasks: updatedSubtasks,
-            progressConfirmation: updatedProgressConfirmation
-        }
-        res.status(200).json({
-            success: true,
-            data: { result }
-        });
-    } catch (error) {
-        console.error('Get task error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error retrieving task',
-            error: process.env.NODE_ENV === 'production' ? error.message : undefined
-        });
-    }
-};
+}
 
 //@desc   Create a new task 
 //@route  POST /api/tasks
@@ -553,6 +662,7 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
     try {
+        const {permanent} = req.query; // if permanent=true, then hard delete, else soft delete (default)
         // find and delete task
         const task = await Task.findOne({
             where: {
@@ -566,11 +676,31 @@ const deleteTask = async (req, res) => {
                 message: 'Task not found'            
             });            
         }
-        await task.destroy();
+        
+        // hard delete 
+        if (permanent === 'true') {
+            await task.destroy();
+            return res.status(200).json({
+                success: true,
+                message: 'Task deleted successfully'
+            }); 
+        }
+
+        // soft delete
+        await task.update({
+            deletedAt: new Date()
+        });
+        // make sure to delete subtask too 
+        await Subtask.update({
+            deletedAt: new Date(),
+            where: {
+                task_id: task.id
+            }
+        });
 
         res.status(200).json({
             success: true,
-            message: 'Task deleted successfully'
+            message: 'Moved to trash successfully'
         });        
     } catch (error) {
         console.error('Delete task error:', error);
@@ -581,6 +711,48 @@ const deleteTask = async (req, res) => {
         });
     }
 };
+
+// restore task from trash
+const restoreTask = async (req, res) => {
+    try {        
+        const task = await Task.findOne({
+            where: {
+                id: req.params.id,
+                user_id: req.user.id    // ensure task belongs to authenticated user
+            }
+        });
+
+        if(!task) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+        // restore task and its subtasks
+        await task.update({
+            deletedAt: null
+        });
+        await Subtask.update({
+            deletedAt: null,
+            where: {
+                task_id: task.id
+            }
+        })
+
+        res.status(200).json({
+            success: true,
+            message: 'Task restored successfully'
+        });
+
+    } catch (error) {
+        console.error('Restore task error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error restoring task',
+            error: process.env.NODE_ENV === 'production' ? error.message : undefined
+        });
+    }
+}
 
 // for categery
 const getCategories = async (req, res) => {
@@ -699,9 +871,11 @@ const getTaskStats = async (req, res) => {
 module.exports = {
     getTasks,
     getTask,
+    getRecycledTasks,
     createTask,
     updateTask,
     deleteTask,
+    restoreTask,
     getCategories,
     getTaskStats
 }

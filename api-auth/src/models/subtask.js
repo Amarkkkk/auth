@@ -122,6 +122,11 @@ const Subtask = sequelize.define ('Subtask', {
             min: 0,
             max: 100
         },
+    },
+    
+    deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 
 }, {

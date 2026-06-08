@@ -257,6 +257,7 @@ const validateUpdateSubtask = [
     .isInt({min: 0, max: 100}).withMessage('Subtask progress percetage must be between 0 and 100')
 ];
 
+
 /**
  * Handle validation errors
  */

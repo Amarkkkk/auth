@@ -6,9 +6,11 @@ const router = express.Router();
 const {
   getSubtasks,
   getSubtask,
+  getRecycledSubtasks,
   createSubtask,
   updateSubtask,
   deleteSubtask,
+  restoreSubtask,
   getSubtaskStats
 } = require('../controllers/subtask');
 
@@ -26,7 +28,8 @@ router.use(protect);
 
 // Statistics route (must come before /:id)
 router.get('/stats', getSubtaskStats);
-
+router.get('/recycle-bin', getRecycledSubtasks);
+router.patch('/restore/:id', restoreSubtask); // New route for restoring a soft-deleted subtask
 // Main CRUD routes
 router.route('/')
   .get(getSubtasks)

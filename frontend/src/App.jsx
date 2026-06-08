@@ -7,6 +7,8 @@ import Analytics from './pages/home/analytics';
 import Task from './pages/home/task';
 
 function App(){
+    console.log("APPs RENDER:", new Date().toLocaleTimeString())
+    console.log("APPs RENDER:", new Date().toLocaleTimeString())
     return (
         <BrowserRouter>            
             <Routes>

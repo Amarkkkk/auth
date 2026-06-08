@@ -135,6 +135,11 @@ const Task = sequelize.define ('Task', {
             min: 0,
             max: 100
         },
+    },
+    
+    deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
     
     }, {

@@ -133,7 +133,7 @@ const Task = () => {
                                         </div>
                                         <div className="text-sm font-semibold">
                                             {task.task_due ? new Date(task.task_due).toLocaleDateString() : 'No due date'}
-                                        </div>
+                                        </div>                                        
                                     </Card>
                                     
                                 </div>
